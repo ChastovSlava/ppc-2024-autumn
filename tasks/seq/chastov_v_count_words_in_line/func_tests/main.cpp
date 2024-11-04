@@ -129,7 +129,7 @@ TEST(chastov_v_count_words_in_line_seq, words_1500) {
 
 // Test case to evaluate the handling of a very large number of words
 // The generated string should be such that the word count is expected to be 7500
-TEST(chastov_v_count_words_in_line_seq, words_750) {
+TEST(chastov_v_count_words_in_line_seq, words_7500) {
   std::vector<char> input = chastov_v_count_words_in_line_seq::createString(500);
   std::vector<int> out(1, 0);
 
@@ -168,12 +168,3 @@ TEST(chastov_v_count_words_in_line_seq, words_with_special_characters) {
 
   ASSERT_EQ(outputData[0], 2);
 }
-
-
-
-
-
-
-
-
-

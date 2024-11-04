@@ -32,7 +32,6 @@ bool chastov_v_count_words_in_line_seq::TestTaskSequential::validation() {
   return taskData->inputs_count[0] > 0 && taskData->outputs_count[0] == 1;
 }
 
-
 bool chastov_v_count_words_in_line_seq::TestTaskSequential::run() {
   internal_order_test();
   spacesFound = 0;
@@ -41,13 +40,12 @@ bool chastov_v_count_words_in_line_seq::TestTaskSequential::run() {
   bool inWord = false;
 
   for (char c : inputString) {
-    if (std::isspace(c)) {
+    if (std::isspace(c) != 0) {
       if (inWord) {
         inWord = false;
         spacesFound++;
       }
-    }
-    else {
+    } else {
       if (!inWord) {
         inWord = true;
         wordsFound++;
