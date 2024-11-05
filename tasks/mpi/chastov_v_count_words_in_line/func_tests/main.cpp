@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 
 #include "mpi/chastov_v_count_words_in_line/include/ops_mpi.hpp"
-
 #include "mpi/chastov_v_count_words_in_line/src/ops_mpi.cpp"
 
 // Test to check the behavior of the MPI word counting function with an empty string
