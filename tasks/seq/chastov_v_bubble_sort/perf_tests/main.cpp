@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <random>
 
 #include "core/perf/include/perf.hpp"
 #include "seq/chastov_v_bubble_sort/include/ops_seq.hpp"
@@ -8,8 +9,9 @@ TEST(chastov_v_bubble_sort, test_pipeline_run) {
 
   // Create data
   std::random_device rd;
-  std::srand(rd());
-  const int num = rand();
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(0, 1000);
+  const int num = dis(gen);
   std::vector<int> in(count, num);
   std::vector<int> out(count);
 

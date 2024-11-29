@@ -20,6 +20,7 @@ class TestTaskSequential : public ppc::core::Task {
   bool run() override;
   bool post_processing() override;
   bool bubble_sort(T*, size_t);
+
  private:
   std::vector<T> data;
   size_t data_size;

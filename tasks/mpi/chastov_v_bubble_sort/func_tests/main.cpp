@@ -224,8 +224,7 @@ TEST(chastov_v_bubble_sort, test_double_rand_120) {
 
   std::vector<double> inputData(massLen);
   for (size_t i = 0; i < massLen; ++i) {
-    inputData[i] =
-        static_cast<double>(std::rand()) * std::pow(-1, std::rand());
+    inputData[i] = static_cast<double>(std::rand()) * std::pow(-1, std::rand());
   }
 
   std::vector<double> outputData(massLen);

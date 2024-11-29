@@ -16,65 +16,65 @@ bool TestMPITaskParallel<T>::bubble_sort() {
   return true;
 }
 
- template <class T>
- bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int>& chunk_sizes) {
-   if (neighbor_rank >= 0 && neighbor_rank < world.size()) {
-     std::vector<T> buffer;
-     std::vector<T> merged_result;
-     MPI_Request request_send, request_recv;
+template <class T>
+bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int>& chunk_sizes) {
+  if (neighbor_rank >= 0 && neighbor_rank < world.size()) {
+    std::vector<T> buffer;
+    std::vector<T> merged_result;
+    MPI_Request request_send, request_recv;
 
-     int active_process = std::max(world.rank(), neighbor_rank);
-     if (world.rank() == active_process) {
-       buffer.resize(chunk_sizes[neighbor_rank]);
-       MPI_Irecv(buffer.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                 &request_recv);
-     } else {
-       MPI_Isend(chunk_data.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                 &request_send);
-     }
+    int active_process = std::max(world.rank(), neighbor_rank);
+    if (world.rank() == active_process) {
+      buffer.resize(chunk_sizes[neighbor_rank]);
+      MPI_Irecv(buffer.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
+                &request_recv);
+    } else {
+      MPI_Isend(chunk_data.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
+                &request_send);
+    }
 
-     if (world.rank() == active_process) {
-       MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
+    if (world.rank() == active_process) {
+      MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
 
-       merged_result.clear();
-       buffer.insert(buffer.end(), chunk_data.begin(), chunk_data.end());
-       size_t left_idx = 0;
-       size_t right_idx = chunk_sizes[neighbor_rank];
-       while (right_idx < buffer.size() || left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank])) {
-         if ((left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size() &&
-              buffer[left_idx] <= buffer[right_idx]) ||
-             (left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx == buffer.size())) {
-           merged_result.push_back(buffer[left_idx]);
-           left_idx++;
-         } else if ((left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size() &&
-                     buffer[left_idx] >= buffer[right_idx]) ||
-                    (left_idx == static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size())) {
-           merged_result.push_back(buffer[right_idx]);
-           right_idx++;
-         }
-       }
+      merged_result.clear();
+      buffer.insert(buffer.end(), chunk_data.begin(), chunk_data.end());
+      size_t left_idx = 0;
+      size_t right_idx = chunk_sizes[neighbor_rank];
+      while (right_idx < buffer.size() || left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank])) {
+        if ((left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size() &&
+             buffer[left_idx] <= buffer[right_idx]) ||
+            (left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx == buffer.size())) {
+          merged_result.push_back(buffer[left_idx]);
+          left_idx++;
+        } else if ((left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size() &&
+                   buffer[left_idx] >= buffer[right_idx]) ||
+                   (left_idx == static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size())) {
+          merged_result.push_back(buffer[right_idx]);
+          right_idx++;
+        }
+      }
 
-       std::copy(merged_result.begin() + chunk_sizes[neighbor_rank],
-                 merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
+      std::copy(merged_result.begin() + chunk_sizes[neighbor_rank],
+                merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
 
-       MPI_Isend(merged_result.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0,
-                 MPI_COMM_WORLD, &request_send);
-     } else {
-       buffer.resize(chunk_data.size());
-       MPI_Irecv(buffer.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                 &request_recv);
-     }
+      MPI_Isend(merged_result.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0,
+                MPI_COMM_WORLD, &request_send);
+    } else {
+      buffer.resize(chunk_data.size());
+      MPI_Irecv(buffer.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
+                &request_recv);
+    }
 
-     if (world.rank() != active_process) {
-       MPI_Wait(&request_send, MPI_STATUS_IGNORE);
-       MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
-       chunk_data = buffer;
-     } else {
-       MPI_Wait(&request_send, MPI_STATUS_IGNORE);
-     }
-   }
-   return true;
- }
+    if (world.rank() != active_process) {
+      MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+      MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
+      chunk_data = buffer;
+    } else {
+      MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+    }
+  }
+  return true;
+}
 
 template <class T>
 bool TestMPITaskParallel<T>::pre_processing() {
@@ -131,8 +131,7 @@ bool TestMPITaskParallel<T>::run() {
     }
   }
   MPI_Gather(chunk_data.data(), chunk_data.size() * sizeof(T), MPI_BYTE, master_data.data(), chunk_size * sizeof(T),
-             MPI_BYTE, 0,
-             MPI_COMM_WORLD);
+             MPI_BYTE, 0, MPI_COMM_WORLD);
   return true;
 }
 
@@ -145,5 +144,7 @@ bool TestMPITaskParallel<T>::post_processing() {
   return true;
 }
 
+namespace chastov_v_bubble_sort {
 template class TestMPITaskParallel<int>;
 template class TestMPITaskParallel<double>;
+}  // namespace chastov_v_bubble_sort
