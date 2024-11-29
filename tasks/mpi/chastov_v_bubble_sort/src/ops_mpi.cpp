@@ -47,7 +47,7 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
           merged_result.push_back(buffer[left_idx]);
           left_idx++;
         } else if ((left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size() &&
-                   buffer[left_idx] >= buffer[right_idx]) ||
+                    buffer[left_idx] >= buffer[right_idx]) ||
                    (left_idx == static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size())) {
           merged_result.push_back(buffer[right_idx]);
           right_idx++;
