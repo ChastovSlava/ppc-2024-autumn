@@ -50,4 +50,4 @@ bool TestTaskSequential<T>::post_processing() {
 namespace chastov_v_bubble_sort {
 template class TestTaskSequential<int>;
 template class TestTaskSequential<double>;
-}
+}  // namespace chastov_v_bubble_sort

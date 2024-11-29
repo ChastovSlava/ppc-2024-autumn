@@ -69,7 +69,7 @@ TEST(chastov_v_bubble_sort, test_task_run) {
     std::srand(std::time(nullptr));
     for (size_t i = 0; i < count_size_vector; i++) {
       global_vec[i] = min + static_cast<double>(rand()) / RAND_MAX * (max - min);
-    }  
+    }
     taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(global_vec.data()));
     taskDataPar->inputs_count.emplace_back(global_vec.size());
     taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(global_out.data()));
