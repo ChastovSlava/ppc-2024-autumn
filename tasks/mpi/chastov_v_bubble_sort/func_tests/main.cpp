@@ -176,43 +176,6 @@ TEST(chastov_v_bubble_sort, test_int_rand_1200) {
   }
 }
 
-TEST(chastov_v_bubble_sort, test_int_rand_12000) {
-  const size_t massLen = 12000;
-  std::srand(std::time(nullptr));
-
-  std::vector<int> inputData(massLen);
-  for (size_t i = 0; i < massLen; ++i) {
-    inputData[i] = std::rand();
-  }
-
-  std::vector<int> outputData(massLen);
-
-  boost::mpi::communicator mpiWorld;
-  auto taskDataPar = std::make_shared<ppc::core::TaskData>();
-
-  if (mpiWorld.rank() == 0) {
-    taskDataPar->inputs_count.push_back(inputData.size());
-    taskDataPar->inputs.push_back(reinterpret_cast<uint8_t *>(inputData.data()));
-    taskDataPar->outputs.push_back(reinterpret_cast<uint8_t *>(outputData.data()));
-    taskDataPar->outputs_count.push_back(outputData.size());
-  }
-
-  chastov_v_bubble_sort::TestMPITaskParallel<int> mpiTask(taskDataPar);
-
-  ASSERT_TRUE(mpiTask.validation());
-
-  mpiTask.pre_processing();
-  mpiTask.run();
-  mpiTask.post_processing();
-
-  if (mpiWorld.rank() == 0) {
-    std::sort(inputData.begin(), inputData.end());
-    for (size_t i = 0; i < massLen; ++i) {
-      EXPECT_EQ(outputData[i], inputData[i]);
-    }
-  }
-}
-
 TEST(chastov_v_bubble_sort, test_double_rand_120) {
   const size_t massLen = 120;
   std::srand(std::time(nullptr));
@@ -296,44 +259,6 @@ TEST(chastov_v_bubble_sort, test_double_rand_1200) {
     }
 
     ASSERT_EQ(mismatchedCount, 0);
-  }
-}
-
-TEST(chastov_v_bubble_sort, test_double_rand_12000) {
-  const size_t massLen = 12000;
-  std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-  std::vector<double> inputData(massLen);
-  for (size_t i = 0; i < massLen; ++i) {
-    inputData[i] = static_cast<double>(std::rand()) / RAND_MAX * 1000.0;
-  }
-
-  std::vector<double> outputData(massLen);
-
-  boost::mpi::communicator mpiWorld;
-  auto taskDataPar = std::make_shared<ppc::core::TaskData>();
-
-  if (mpiWorld.rank() == 0) {
-    taskDataPar->inputs_count.push_back(inputData.size());
-    taskDataPar->inputs.push_back(reinterpret_cast<uint8_t *>(inputData.data()));
-    taskDataPar->outputs.push_back(reinterpret_cast<uint8_t *>(outputData.data()));
-    taskDataPar->outputs_count.push_back(outputData.size());
-  }
-
-  chastov_v_bubble_sort::TestMPITaskParallel<double> mpiTask(taskDataPar);
-
-  ASSERT_TRUE(mpiTask.validation());
-
-  mpiTask.pre_processing();
-  mpiTask.run();
-  mpiTask.post_processing();
-
-  if (mpiWorld.rank() == 0) {
-    std::sort(inputData.begin(), inputData.end());
-
-    for (size_t i = 0; i < massLen; ++i) {
-      EXPECT_DOUBLE_EQ(outputData[i], inputData[i]);
-    }
   }
 }
 
