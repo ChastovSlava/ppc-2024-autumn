@@ -178,7 +178,7 @@ TEST(chastov_v_bubble_sort, test_int_rand_1200) {
 
 TEST(chastov_v_bubble_sort, test_int_rand_12000) {
   const size_t massLen = 12000;
-  td::srand(std::time(nullptr));
+  std::srand(std::time(nullptr));
 
   std::vector<int> inputData(massLen);
   for (size_t i = 0; i < massLen; ++i) {
@@ -305,7 +305,7 @@ TEST(chastov_v_bubble_sort, test_double_rand_12000) {
 
   std::vector<double> inputData(massLen);
   for (size_t i = 0; i < massLen; ++i) {
-    inputData[i] = static_cast<double>(std::rand()) / RAND_MAX * 1000.0; // Диапазон [0, 1000]
+    inputData[i] = static_cast<double>(std::rand()) / RAND_MAX * 1000.0;
   }
 
   std::vector<double> outputData(massLen);
@@ -336,7 +336,6 @@ TEST(chastov_v_bubble_sort, test_double_rand_12000) {
     }
   }
 }
-
 
 TEST(chastov_v_bubble_sort, test_mass_identical_values) {
   const size_t massLen = 100;
