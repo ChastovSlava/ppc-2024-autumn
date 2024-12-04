@@ -57,15 +57,25 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
       std::copy(merged_result.begin() + chunk_sizes[neighbor_rank],
                 merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
 
+      // Завершение предыдущего запроса отправки (если он был инициирован)
+      if (request_send != MPI_REQUEST_NULL) {
+        MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+      }
+
+      // Новый запрос отправки
+      MPI_Request new_request_send = MPI_REQUEST_NULL;
       MPI_Isend(merged_result.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0,
-                MPI_COMM_WORLD, &request_send);
+                MPI_COMM_WORLD, &new_request_send);
+
+      // Обновляем `request_send`
+      request_send = new_request_send;
     } else {
       buffer.resize(chunk_data.size());
       MPI_Irecv(buffer.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
                 &request_recv);
     }
 
-    // Ожидание только тех запросов, которые были инициализированы
+    // Ожидание завершения запросов
     if (request_send != MPI_REQUEST_NULL) {
       MPI_Wait(&request_send, MPI_STATUS_IGNORE);
     }
