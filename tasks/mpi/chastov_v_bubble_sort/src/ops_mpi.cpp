@@ -25,6 +25,7 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
     MPI_Request request_recv = MPI_REQUEST_NULL;
 
     int active_process = std::max(world.rank(), neighbor_rank);
+
     if (world.rank() == active_process) {
       buffer.resize(chunk_sizes[neighbor_rank]);
       MPI_Irecv(buffer.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
@@ -32,7 +33,7 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
     } else {
       MPI_Isend(chunk_data.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
                 &request_send);
-      MPI_Wait(&request_send, MPI_STATUS_IGNORE);  // Сразу ждем завершения отправки
+      MPI_Wait(&request_send, MPI_STATUS_IGNORE);  // Ждем завершения отправки
       request_send = MPI_REQUEST_NULL;            // Сбрасываем запрос
     }
 
