@@ -21,23 +21,14 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
   if (neighbor_rank >= 0 && neighbor_rank < world.size()) {
     std::vector<T> buffer;
     std::vector<T> merged_result;
-    MPI_Request request_send = MPI_REQUEST_NULL;
-    MPI_Request request_recv = MPI_REQUEST_NULL;
-
     int active_process = std::max(world.rank(), neighbor_rank);
     if (world.rank() == active_process) {
       buffer.resize(chunk_sizes[neighbor_rank]);
-      MPI_Irecv(buffer.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                &request_recv);
+      world.recv(neighbor_rank, 0, buffer);
     } else {
-      MPI_Isend(chunk_data.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                &request_send);
+      world.send(neighbor_rank, 0, chunk_data);
     }
-
     if (world.rank() == active_process) {
-      MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
-
-      // Слияние данных
       merged_result.clear();
       buffer.insert(buffer.end(), chunk_data.begin(), chunk_data.end());
       size_t left_idx = 0;
@@ -48,43 +39,21 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
             (left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx == buffer.size())) {
           merged_result.push_back(buffer[left_idx]);
           left_idx++;
-        } else {
+        } else if ((left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size() &&
+                    buffer[left_idx] >= buffer[right_idx]) ||
+                   (left_idx == static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size())) {
           merged_result.push_back(buffer[right_idx]);
           right_idx++;
         }
       }
-
       std::copy(merged_result.begin() + chunk_sizes[neighbor_rank],
-                merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
-
-      // Завершение предыдущего запроса отправки (если он был инициирован)
-      if (request_send != MPI_REQUEST_NULL) {
-        MPI_Wait(&request_send, MPI_STATUS_IGNORE);
-      }
-
-      // Новый запрос отправки
-      MPI_Request new_request_send = MPI_REQUEST_NULL;
-      MPI_Isend(merged_result.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0,
-                MPI_COMM_WORLD, &new_request_send);
-
-      // Обновляем `request_send`
-      request_send = new_request_send;
+                merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(),
+                chunk_data.begin());
+    }
+    if (world.rank() == active_process) {
+      world.send(neighbor_rank, 0, merged_result.data(), chunk_sizes[neighbor_rank]);
     } else {
-      buffer.resize(chunk_data.size());
-      MPI_Irecv(buffer.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                &request_recv);
-    }
-
-    // Ожидание завершения запросов
-    if (request_send != MPI_REQUEST_NULL) {
-      MPI_Wait(&request_send, MPI_STATUS_IGNORE);
-    }
-    if (request_recv != MPI_REQUEST_NULL) {
-      MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
-    }
-
-    if (world.rank() != active_process) {
-      chunk_data = buffer;
+      world.recv(neighbor_rank, 0, chunk_data.data(), chunk_data.size());
     }
   }
   return true;
