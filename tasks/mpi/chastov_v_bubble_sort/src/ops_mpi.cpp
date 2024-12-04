@@ -38,6 +38,7 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
       // Ожидаем завершения приема данных
       if (request_recv != MPI_REQUEST_NULL) {
         MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
+        request_recv = MPI_REQUEST_NULL; // Сбрасываем, чтобы избежать повторного использования
       }
 
       // Слияние данных
@@ -60,10 +61,22 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
       std::copy(merged_result.begin() + chunk_sizes[neighbor_rank],
                 merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
 
+      // Убеждаемся, что предыдущий запрос завершен перед повторным использованием
+      if (request_send != MPI_REQUEST_NULL) {
+        MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+        request_send = MPI_REQUEST_NULL; // Сбрасываем
+      }
+
       // Отправка объединенных данных
       MPI_Isend(merged_result.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0,
                 MPI_COMM_WORLD, &request_send);
     } else {
+      // Убеждаемся, что предыдущий `request_recv` завершён перед повторным вызовом `MPI_Irecv`
+      if (request_recv != MPI_REQUEST_NULL) {
+        MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
+        request_recv = MPI_REQUEST_NULL; // Сбрасываем
+      }
+
       buffer.resize(chunk_data.size());
       MPI_Irecv(buffer.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
                 &request_recv);
@@ -71,21 +84,25 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
       // Ожидаем завершения передачи и приема
       if (request_send != MPI_REQUEST_NULL) {
         MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+        request_send = MPI_REQUEST_NULL; // Сбрасываем
       }
       if (request_recv != MPI_REQUEST_NULL) {
         MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
+        request_recv = MPI_REQUEST_NULL; // Сбрасываем
       }
 
       // Обновляем локальные данные
       chunk_data = buffer;
     }
 
-    // Убеждаемся, что все `MPI_Request` обработаны
+    // Обработка запросов вне ветвей
     if (request_send != MPI_REQUEST_NULL) {
       MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+      request_send = MPI_REQUEST_NULL; // Сбрасываем
     }
     if (request_recv != MPI_REQUEST_NULL) {
       MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
+      request_recv = MPI_REQUEST_NULL; // Сбрасываем
     }
   }
   return true;
