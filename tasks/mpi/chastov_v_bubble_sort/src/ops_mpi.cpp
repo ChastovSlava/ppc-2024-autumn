@@ -21,8 +21,8 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
   if (neighbor_rank >= 0 && neighbor_rank < world.size()) {
     std::vector<T> buffer;
     std::vector<T> merged_result;
-    MPI_Request request_send;
-    MPI_Request request_recv;
+    MPI_Request request_send = MPI_REQUEST_NULL;
+    MPI_Request request_recv = MPI_REQUEST_NULL;
 
     int active_process = std::max(world.rank(), neighbor_rank);
     if (world.rank() == active_process) {
@@ -37,6 +37,7 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
     if (world.rank() == active_process) {
       MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
 
+      // Слияние данных
       merged_result.clear();
       buffer.insert(buffer.end(), chunk_data.begin(), chunk_data.end());
       size_t left_idx = 0;
@@ -47,9 +48,7 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
             (left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx == buffer.size())) {
           merged_result.push_back(buffer[left_idx]);
           left_idx++;
-        } else if ((left_idx < static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size() &&
-                    buffer[left_idx] >= buffer[right_idx]) ||
-                   (left_idx == static_cast<size_t>(chunk_sizes[neighbor_rank]) && right_idx < buffer.size())) {
+        } else {
           merged_result.push_back(buffer[right_idx]);
           right_idx++;
         }
@@ -66,12 +65,16 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
                 &request_recv);
     }
 
-    if (world.rank() != active_process) {
+    // Ожидание только тех запросов, которые были инициализированы
+    if (request_send != MPI_REQUEST_NULL) {
       MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+    }
+    if (request_recv != MPI_REQUEST_NULL) {
       MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
+    }
+
+    if (world.rank() != active_process) {
       chunk_data = buffer;
-    } else {
-      MPI_Wait(&request_send, MPI_STATUS_IGNORE);
     }
   }
   return true;
