@@ -21,7 +21,8 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
   if (neighbor_rank >= 0 && neighbor_rank < world.size()) {
     std::vector<T> buffer;
     std::vector<T> merged_result;
-    MPI_Request request_send, request_recv;
+    MPI_Request request_send;
+    MPI_Request request_recv;
 
     int active_process = std::max(world.rank(), neighbor_rank);
     if (world.rank() == active_process) {
