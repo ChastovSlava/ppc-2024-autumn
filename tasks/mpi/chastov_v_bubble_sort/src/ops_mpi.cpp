@@ -21,21 +21,21 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
   if (neighbor_rank >= 0 && neighbor_rank < world.size()) {
     std::vector<T> buffer;
     std::vector<T> merged_result;
-    MPI_Request request_send_1, request_send_2;
-    MPI_Request request_recv_1, request_recv_2;
+    MPI_Request request_send;
+    MPI_Request request_recv;
 
     int active_process = std::max(world.rank(), neighbor_rank);
     if (world.rank() == active_process) {
       buffer.resize(chunk_sizes[neighbor_rank]);
       MPI_Irecv(buffer.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                &request_recv_1);  // Инициализация запроса для получения
+                &request_recv);
     } else {
       MPI_Isend(chunk_data.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                &request_send_1);  // Инициализация запроса для отправки
+                &request_send);
     }
 
     if (world.rank() == active_process) {
-      MPI_Wait(&request_recv_1, MPI_STATUS_IGNORE);  // Дожидаемся завершения получения
+      MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
 
       merged_result.clear();
       buffer.insert(buffer.end(), chunk_data.begin(), chunk_data.end());
@@ -59,19 +59,19 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
                 merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
 
       MPI_Isend(merged_result.data(), chunk_sizes[neighbor_rank] * sizeof(T), MPI_BYTE, neighbor_rank, 0,
-                MPI_COMM_WORLD, &request_send_2);  // Новый запрос для отправки объединенного результата
+                MPI_COMM_WORLD, &request_send);
     } else {
       buffer.resize(chunk_data.size());
       MPI_Irecv(buffer.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
-                &request_recv_2);  // Новый запрос для получения
+                &request_recv);
     }
 
     if (world.rank() != active_process) {
-      MPI_Wait(&request_send_1, MPI_STATUS_IGNORE);  // Дожидаемся завершения первой отправки
-      MPI_Wait(&request_recv_2, MPI_STATUS_IGNORE);  // Дожидаемся завершения второй операции получения
+      MPI_Wait(&request_send, MPI_STATUS_IGNORE);
+      MPI_Wait(&request_recv, MPI_STATUS_IGNORE);
       chunk_data = buffer;
     } else {
-      MPI_Wait(&request_send_2, MPI_STATUS_IGNORE);  // Дожидаемся завершения второй отправки
+      MPI_Wait(&request_send, MPI_STATUS_IGNORE);
     }
   }
   return true;
