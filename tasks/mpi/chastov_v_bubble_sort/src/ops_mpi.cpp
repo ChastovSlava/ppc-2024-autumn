@@ -18,7 +18,7 @@ bool TestMPITaskParallel<T>::bubble_sort() {
 
 template <class T>
 bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int>& chunk_sizes) {
-  if (neighbor_rank >= 0 && neighbor_rank < world.size()) {
+  if ((neighbor_rank >= 0) && (neighbor_rank < world.size())) {
     std::vector<T> buffer;
     std::vector<T> merged_result;
     int active_process = std::max(world.rank(), neighbor_rank);
