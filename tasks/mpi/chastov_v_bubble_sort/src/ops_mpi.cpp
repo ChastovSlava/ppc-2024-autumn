@@ -55,7 +55,7 @@ bool TestMPITaskParallel<T>::chunk_merge_sort(int neighbor_rank, std::vector<int
       MPI_Wait(&send_request, MPI_STATUS_IGNORE);
 
       std::copy(merged_result.begin() + chunk_sizes[neighbor_rank],
-                      merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
+                merged_result.begin() + chunk_sizes[neighbor_rank] + chunk_data.size(), chunk_data.begin());
 
     } else {
       MPI_Isend(chunk_data.data(), chunk_data.size() * sizeof(T), MPI_BYTE, neighbor_rank, 0, MPI_COMM_WORLD,
